@@ -642,6 +642,46 @@
   }
 
   .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ARCHIVE */
+  .date-tab {
+    padding: 6px 14px;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .date-tab.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .date-tab:hover:not(.active) {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .static-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    background: #fffbf5;
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+  .static-link:hover { background: var(--gold); color: white; }
 </style>
 </head>
 <body>
@@ -671,13 +711,20 @@
     <button class="cat-btn" data-cat="ir">Videsh Niti</button>
     <button class="cat-btn" data-cat="science">Vigyan</button>
     <button class="cat-btn" data-cat="geography">Bhugol</button>
+    <button class="cat-btn" data-cat="topics" onclick="openTopicExplorer()">📚 Topics</button>
+    <button class="cat-btn" data-cat="answer" onclick="openAnswerWriter()">✍️ Answer Writing</button>
   </div>
 </header>
 
 <main>
-  <div class="feed" id="news-feed">
-    <div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
-    <!-- Cards injected here -->
+  <div class="feed" id="news-feed-wrap">
+    <!-- Date tabs -->
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;scrollbar-width:none" id="date-tabs-wrap">
+      <button class="date-tab active" data-date="today" onclick="switchDate('today', this)">📅 Aaj</button>
+    </div>
+    <div id="news-feed">
+      <div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
+    </div>
   </div>
 
   <div class="sidebar">
@@ -828,41 +875,50 @@ function renderCards(filter='all') {
   const feed = document.getElementById('news-feed');
   const header = feed.querySelector('.section-label');
   feed.innerHTML = '';
-  feed.appendChild(header);
+  if(header) feed.appendChild(header);
 
-  const filtered = filter === 'all' ? NEWS : NEWS.filter(n => n.cat === filter);
+  // Newest first
+  const source = NEWS.slice().reverse();
+  const filtered = filter === 'all' ? source : source.filter(n => n.cat === filter);
 
   if (!filtered.length) {
-    feed.innerHTML += `<div style="text-align:center;padding:40px;color:var(--muted)">Is category mein koi khabar nahi.</div>`;
+    feed.innerHTML += '<div style="text-align:center;padding:40px;color:var(--muted)">Is category mein koi khabar nahi.</div>';
     return;
   }
 
+  const STATIC_MAP = {
+    polity: ['Fundamental Rights','DPSP','Emergency Provisions','Federalism','Parliament'],
+    economy: ['RBI Functions','Monetary Policy','Budget Process','GST','Five Year Plans'],
+    enviro: ['Climate Change','Biodiversity','National Parks India','Paris Agreement','Green Energy'],
+    ir: ['India Foreign Policy','SAARC','India China Relations','NAM','United Nations'],
+    science: ['ISRO Missions','Nuclear Policy India','Digital India','Biotechnology','Space Policy'],
+    geography: ['Monsoon India','Indian Ocean','Western Ghats','Himalayan Rivers','Soil Types India']
+  };
+
   filtered.forEach(item => {
+    const topics = STATIC_MAP[item.cat] || STATIC_MAP.polity;
+    const staticTopic = topics[item.id % topics.length];
     const card = document.createElement('div');
     card.className = 'news-card';
-    card.innerHTML = `
-      <div class="card-badge-row">
-        <span class="badge ${item.badgeClass}">${item.badgeText}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${item.trending ? '<span class="badge badge-hot">🔥 Trending</span>' : ''}
-          <div class="difficulty" title="Difficulty">${renderDots(item.difficulty)}</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="card-title">${item.title}</div>
-        <div class="card-meta">
-          <span>${item.date}</span>
-          <span>•</span>
-          <span>${item.source}</span>
-        </div>
-        <div class="card-summary">${item.summary}</div>
-        <div class="card-tags">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-        <div class="card-cta">
-          <button class="btn-learn" onclick="openLearn(${item.id})">📖 Explain karo UPSC ke liye</button>
-          <button class="btn-quiz" onclick="openQuiz(${item.id})">✏️ Quiz</button>
-        </div>
-      </div>
-    `;
+    card.innerHTML =
+      '<div class="card-badge-row">' +
+        '<span class="badge ' + item.badgeClass + '">' + item.badgeText + '</span>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          (item.trending ? '<span class="badge badge-hot">🔥 Trending</span>' : '') +
+          '<div class="difficulty" title="Difficulty">' + renderDots(item.difficulty) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-title">' + item.title + '</div>' +
+        '<div class="card-meta"><span>' + item.date + '</span><span>•</span><span>' + item.source + '</span></div>' +
+        '<div class="card-summary">' + item.summary + '</div>' +
+        '<div class="card-tags">' + item.tags.map(t => '<span class="tag">' + t + '</span>').join('') + '</div>' +
+        '<div class="static-link" onclick="openTopicExplorer(); setTimeout(function(){explainTopic(\'' + staticTopic + '\')},200)">📚 Related Static: ' + staticTopic + ' →</div>' +
+        '<div class="card-cta" style="margin-top:10px">' +
+          '<button class="btn-learn" onclick="openLearn(' + item.id + ')">📖 Explain karo UPSC ke liye</button>' +
+          '<button class="btn-quiz" onclick="openQuiz(' + item.id + ')">✏️ Quiz</button>' +
+        '</div>' +
+      '</div>';
     feed.appendChild(card);
   });
 }
@@ -927,36 +983,107 @@ function updateReadCount() {
 async function loadNews() {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.textContent = '⏳ Loading...';
-  const feed = document.getElementById('news-feed');
 
   const d = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const today = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const today = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  const todayKey = 'news_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
 
-  feed.innerHTML = `<div class="section-label">Aaj Ki Khabrein — ${today}</div>
-    <div style="text-align:center;padding:40px;color:var(--muted)">
-      <div class="spinner" style="margin:0 auto 12px"></div>
-      <div>Taza khabrein la raha hoon...</div>
-    </div>`;
+  const feed = document.getElementById('news-feed');
+  feed.innerHTML = '<div class="section-label">Aaj Ki Khabrein — ' + today + '</div>' +
+    '<div style="text-align:center;padding:40px;color:var(--muted)">' +
+    '<div class="spinner" style="margin:0 auto 12px"></div>' +
+    '<div>Taza khabrein la raha hoon...</div></div>';
 
   try {
     const resp = await fetch('/api/news');
     const data = await resp.json();
-    if (data.success && data.news?.length) {
+    if (data.success && data.news && data.news.length) {
       NEWS = data.news;
-      console.log('News loaded from API:', NEWS.length);
+
+      // Save to archive with today's date key
+      try {
+        const archive = JSON.parse(localStorage.getItem('upsc_archive') || '{}');
+        archive[todayKey] = { date: today, displayDate: today, news: NEWS };
+        // Keep only last 30 days
+        const keys = Object.keys(archive).sort().reverse().slice(0, 30);
+        const trimmed = {};
+        keys.forEach(k => trimmed[k] = archive[k]);
+        localStorage.setItem('upsc_archive', JSON.stringify(trimmed));
+      } catch(e) {}
+
+      updateDateTabs(todayKey);
     } else {
-      console.log('API failed, using fallback:', data.error);
       NEWS = FALLBACK_NEWS;
     }
   } catch(e) {
-    console.log('Fetch error:', e.message);
-    NEWS = FALLBACK_NEWS;
+    // Try to load today from archive first
+    try {
+      const archive = JSON.parse(localStorage.getItem('upsc_archive') || '{}');
+      if (archive[todayKey]) {
+        NEWS = archive[todayKey].news;
+        updateDateTabs(todayKey);
+      } else {
+        NEWS = FALLBACK_NEWS;
+        updateDateTabs(todayKey);
+      }
+    } catch(e2) {
+      NEWS = FALLBACK_NEWS;
+    }
   }
 
   renderCards('all');
   const btn2 = document.getElementById('refresh-btn');
   if (btn2) btn2.textContent = '🔄 Refresh';
+}
+
+function updateDateTabs(activeKey) {
+  try {
+    const archive = JSON.parse(localStorage.getItem('upsc_archive') || '{}');
+    const wrap = document.getElementById('date-tabs-wrap');
+    if (!wrap) return;
+
+    const keys = Object.keys(archive).sort().reverse();
+    wrap.innerHTML = '';
+
+    keys.forEach(key => {
+      const btn = document.createElement('button');
+      btn.className = 'date-tab' + (key === activeKey ? ' active' : '');
+      btn.dataset.date = key;
+      const d = archive[key];
+      btn.textContent = key === activeKey ? '📅 Aaj — ' + d.displayDate : d.displayDate;
+      btn.onclick = function() { switchDate(key, btn); };
+      wrap.appendChild(btn);
+    });
+
+    // If no archive yet, show just today
+    if (!keys.length) {
+      wrap.innerHTML = '<button class="date-tab active">📅 Aaj</button>';
+    }
+  } catch(e) {}
+}
+
+function switchDate(dateKey, btnEl) {
+  // Update active tab
+  document.querySelectorAll('.date-tab').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+
+  if (dateKey === 'today' || !dateKey) {
+    renderCards('all');
+    return;
+  }
+
+  // Load from archive
+  try {
+    const archive = JSON.parse(localStorage.getItem('upsc_archive') || '{}');
+    if (archive[dateKey]) {
+      NEWS = archive[dateKey].news;
+      const feed = document.getElementById('news-feed');
+      const header = feed.querySelector('.section-label');
+      if (header) header.textContent = archive[dateKey].displayDate + ' Ki Khabrein';
+      renderCards('all');
+    }
+  } catch(e) {}
 }
 
 
@@ -1249,5 +1376,297 @@ function showToast(msg) {
 // ─── INIT ────────────────────────────────────────────────────────────────────
 loadNews();
 </script>
+
+<!-- TOPIC EXPLORER MODAL -->
+<div class="modal-overlay" id="topic-modal-overlay">
+  <div class="modal" id="topic-modal" style="max-width:820px">
+    <div class="modal-head">
+      <button class="modal-close" onclick="document.getElementById('topic-modal-overlay').classList.remove('open')">✕</button>
+      <div class="modal-category">📚 Static Topics Explorer</div>
+      <div class="modal-title" style="font-size:20px">Koi bhi UPSC topic deeply samjho</div>
+    </div>
+    <div class="modal-body">
+      <!-- Quick topic chips -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase">Popular Topics</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px" id="topic-chips">
+          <button class="topic-chip" onclick="explainTopic('Article 370')">Article 370</button>
+          <button class="topic-chip" onclick="explainTopic('Fundamental Rights')">Fundamental Rights</button>
+          <button class="topic-chip" onclick="explainTopic('Directive Principles')">DPSP</button>
+          <button class="topic-chip" onclick="explainTopic('Preamble of Constitution')">Preamble</button>
+          <button class="topic-chip" onclick="explainTopic('Emergency Provisions')">Emergency</button>
+          <button class="topic-chip" onclick="explainTopic('Monsoon in India')">Monsoon</button>
+          <button class="topic-chip" onclick="explainTopic('Mughal Empire')">Mughals</button>
+          <button class="topic-chip" onclick="explainTopic('Non Cooperation Movement')">Non-Cooperation</button>
+          <button class="topic-chip" onclick="explainTopic('RBI Functions')">RBI</button>
+          <button class="topic-chip" onclick="explainTopic('Green Revolution India')">Green Revolution</button>
+          <button class="topic-chip" onclick="explainTopic('Indian Ocean geography')">Indian Ocean</button>
+          <button class="topic-chip" onclick="explainTopic('Federalism in India')">Federalism</button>
+        </div>
+      </div>
+
+      <!-- Search box -->
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <input type="text" id="topic-input" placeholder="Koi bhi topic likho — jaise 'Article 356', 'Battle of Plassey', 'Western Ghats'..." 
+          style="flex:1;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg)"
+          onkeydown="if(event.key==='Enter') explainTopic(document.getElementById('topic-input').value)"/>
+        <button onclick="explainTopic(document.getElementById('topic-input').value)"
+          style="padding:12px 20px;background:var(--ink);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">
+          🔍 Explain Karo
+        </button>
+      </div>
+
+      <!-- Result area -->
+      <div id="topic-result"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANSWER WRITING MODAL -->
+<div class="modal-overlay" id="answer-modal-overlay">
+  <div class="modal" id="answer-modal" style="max-width:820px">
+    <div class="modal-head">
+      <button class="modal-close" onclick="document.getElementById('answer-modal-overlay').classList.remove('open')">✕</button>
+      <div class="modal-category">✍️ Answer Writing Practice</div>
+      <div class="modal-title" style="font-size:20px">Mains ke liye perfect answer likhna seekho</div>
+    </div>
+    <div class="modal-body">
+      <!-- Sample questions -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase">Sample Questions</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button class="topic-chip" onclick="generateAnswer('Discuss the role of RBI in controlling inflation in India.')">RBI & Inflation</button>
+          <button class="topic-chip" onclick="generateAnswer('Examine the significance of Fundamental Rights in Indian democracy.')">Fundamental Rights</button>
+          <button class="topic-chip" onclick="generateAnswer('Analyze the impact of Green Revolution on Indian agriculture.')">Green Revolution</button>
+          <button class="topic-chip" onclick="generateAnswer('Discuss India\'s foreign policy towards its neighbors.')">Foreign Policy</button>
+          <button class="topic-chip" onclick="generateAnswer('Explain the causes and effects of climate change in India.')">Climate Change</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:20px;align-items:flex-start">
+        <textarea id="answer-input" placeholder="Apna Mains question yahan likho..." 
+          style="flex:1;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg);height:80px;resize:vertical"></textarea>
+        <button onclick="generateAnswer(document.getElementById('answer-input').value)"
+          style="padding:12px 20px;background:var(--ink);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">
+          ✍️ Answer Banao
+        </button>
+      </div>
+
+      <div id="answer-result"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.topic-chip {
+  padding: 7px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  color: var(--ink);
+}
+.topic-chip:hover {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+.answer-section {
+  margin-bottom: 20px;
+}
+.answer-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.answer-para {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #333;
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid var(--accent);
+}
+.word-count {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  margin-top: 8px;
+}
+</style>
+
+<script>
+// ─── TOPIC EXPLORER ──────────────────────────────────────────────────────────
+function openTopicExplorer() {
+  document.getElementById('topic-modal-overlay').classList.add('open');
+  document.getElementById('topic-result').innerHTML = '';
+  document.getElementById('topic-input').value = '';
+}
+
+document.getElementById('topic-modal-overlay').onclick = e => {
+  if (e.target === document.getElementById('topic-modal-overlay'))
+    document.getElementById('topic-modal-overlay').classList.remove('open');
+};
+
+async function explainTopic(topic) {
+  if (!topic || topic.trim().length < 2) return;
+  const result = document.getElementById('topic-result');
+  result.innerHTML = `<div class="loading-state"><div class="spinner"></div><div>AI ${topic} explain kar raha hai...</div></div>`;
+
+  const prompt = `Tum UPSC ke best teacher ho. "${topic}" topic ko UPSC aspirant ke liye Hindi-English mix mein deeply explain karo.
+
+SIRF JSON return karo:
+{
+  "overview": "3-4 line overview — yeh topic kya hai, kyun important hai UPSC ke liye",
+  "keyFacts": [
+    "Important fact 1 — specific dates, numbers, names ke saath",
+    "Important fact 2",
+    "Important fact 3",
+    "Important fact 4",
+    "Important fact 5"
+  ],
+  "upscAngle": "UPSC mein yeh topic kaise aata hai — Prelims ya Mains, kis paper mein, kaunse aspects important hain",
+  "relatedTopics": ["Related topic 1", "Related topic 2", "Related topic 3"],
+  "pyqExample": "Ek example previous year question is topic se related",
+  "memoryTrick": "Ek clever trick ya mnemonic is topic ko yaad rakhne ke liye"
+}`;
+
+  try {
+    const resp = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1000, temperature: 0.7
+      })
+    });
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Parse failed');
+    const d = JSON.parse(match[0]);
+
+    result.innerHTML = `
+      <div class="answer-section">
+        <div class="answer-section-title">📌 Overview</div>
+        <div class="answer-para">${d.overview}</div>
+      </div>
+      <div class="answer-section">
+        <div class="answer-section-title">⚡ Key Facts — Exam mein directly kaam aayenge</div>
+        <div class="key-points">${(d.keyFacts||[]).map((f,i)=>`<div class="key-point"><div class="key-point-num">${i+1}</div><div>${f}</div></div>`).join('')}</div>
+      </div>
+      <div class="answer-section">
+        <div class="answer-section-title">🎯 UPSC Angle</div>
+        <div class="story-text">${d.upscAngle}</div>
+      </div>
+      <div class="answer-section">
+        <div class="answer-section-title">🔗 Related Topics</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">${(d.relatedTopics||[]).map(t=>`<button class="topic-chip" onclick="explainTopic('${t}')">${t}</button>`).join('')}</div>
+      </div>
+      ${d.pyqExample ? `<div class="answer-section">
+        <div class="answer-section-title">📝 Previous Year Question Example</div>
+        <div class="mcq-question" style="border-radius:10px">${d.pyqExample}</div>
+      </div>` : ''}
+      ${d.memoryTrick ? `<div class="answer-section">
+        <div class="answer-section-title">🧠 Memory Trick</div>
+        <div class="mnemonic-box"><div class="mnemonic-hint" style="font-size:14px;color:rgba(255,255,255,0.9)">${d.memoryTrick}</div></div>
+      </div>` : ''}
+    `;
+  } catch(e) {
+    result.innerHTML = `<div class="loading-state" style="color:var(--accent)">⚠️ Problem aayi. Dobara try karo.</div>`;
+  }
+}
+
+// ─── ANSWER WRITING ──────────────────────────────────────────────────────────
+function openAnswerWriter() {
+  document.getElementById('answer-modal-overlay').classList.add('open');
+  document.getElementById('answer-result').innerHTML = '';
+  document.getElementById('answer-input').value = '';
+}
+
+document.getElementById('answer-modal-overlay').onclick = e => {
+  if (e.target === document.getElementById('answer-modal-overlay'))
+    document.getElementById('answer-modal-overlay').classList.remove('open');
+};
+
+async function generateAnswer(question) {
+  if (!question || question.trim().length < 5) return;
+  document.getElementById('answer-input').value = question;
+  const result = document.getElementById('answer-result');
+  result.innerHTML = `<div class="loading-state"><div class="spinner"></div><div>AI perfect answer likh raha hai...</div></div>`;
+
+  const prompt = `Tum UPSC Mains expert ho. Niche diye gaye question ka perfect UPSC Mains answer likho.
+
+Question: "${question}"
+
+SIRF JSON return karo:
+{
+  "wordCount": "150-200 words (approx)",
+  "introduction": "2-3 line strong introduction — hook ke saath",
+  "bodyPoints": [
+    {"heading": "Point 1 heading", "content": "Point ka detailed explanation — 2-3 lines"},
+    {"heading": "Point 2 heading", "content": "Explanation"},
+    {"heading": "Point 3 heading", "content": "Explanation"},
+    {"heading": "Point 4 heading", "content": "Explanation"}
+  ],
+  "conclusion": "2-3 line strong conclusion — forward looking statement ke saath",
+  "examTips": "Is type ke question mein kya dhyan rakhna chahiye — examiner kya dekhta hai"
+}`;
+
+  try {
+    const resp = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1200, temperature: 0.7
+      })
+    });
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Parse failed');
+    const d = JSON.parse(match[0]);
+
+    result.innerHTML = `
+      <div style="background:var(--ink);color:white;padding:12px 16px;border-radius:10px 10px 0 0;font-size:13px;display:flex;justify-content:space-between">
+        <span>📝 Model Answer</span>
+        <span style="opacity:0.6">${d.wordCount}</span>
+      </div>
+      <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:20px;margin-bottom:20px">
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Introduction</div>
+          <div style="font-size:14px;line-height:1.8;color:#333">${d.introduction}</div>
+        </div>
+        ${(d.bodyPoints||[]).map(p=>`
+        <div style="margin-bottom:14px;padding-left:14px;border-left:3px solid var(--accent2)">
+          <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:4px">${p.heading}</div>
+          <div style="font-size:14px;line-height:1.8;color:#444">${p.content}</div>
+        </div>`).join('')}
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--green);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Conclusion</div>
+          <div style="font-size:14px;line-height:1.8;color:#333">${d.conclusion}</div>
+        </div>
+      </div>
+      ${d.examTips ? `<div class="story-text" style="margin-bottom:0">💡 <strong>Examiner Tips:</strong> ${d.examTips}</div>` : ''}
+    `;
+  } catch(e) {
+    result.innerHTML = `<div class="loading-state" style="color:var(--accent)">⚠️ Problem aayi. Dobara try karo.</div>`;
+  }
+}
+</script>
+
 </body>
 </html>
