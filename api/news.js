@@ -3,17 +3,35 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   try {
-    const feeds = [
-      'https://feeds.feedburner.com/ndtvnews-india-news',
-      'https://www.thehindu.com/news/national/feeder/default.rss',
-      'https://indianexpress.com/section/india/feed/'
-    ];
+    // Google News RSS — India UPSC relevant topics
+    const googleNewsUrl = 'https://news.google.com/rss/search?q=india+government+policy+economy+environment&hl=en-IN&gl=IN&ceid=IN:en';
+    
+    const resp = await fetch(googleNewsUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    
+    const xml = await resp.text();
+    
+    // Parse RSS XML manually
+    const items = [];
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    let match;
+    
+    while ((match = itemRegex.exec(xml)) !== null && items.length < 12) {
+      const item = match[1];
+      const title = (item.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+      const desc = (item.match(/<description>([\s\S]*?)<\/description>/) || [])[1] || '';
+      const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
+      const source = (item.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || 'News';
+      
+      // Clean title — remove source name at end
+      const cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/ - [^-]+$/, '').trim();
+      const cleanDesc = desc.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').trim();
+      
+      if (cleanTitle) items.push({ title: cleanTitle, desc: cleanDesc, pubDate, source: source.replace(/<!\[CDATA\[|\]\]>/g, '') });
+    }
 
-    const rssUrl = encodeURIComponent(feeds[0]);
-    const resp = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=15`);
-    const data = await resp.json();
-
-    if (data.status !== 'ok') throw new Error('RSS fetch failed');
+    if (!items.length) throw new Error('No items parsed from RSS');
 
     const CAT_MAP = {
       economy: { cat: 'economy', badgeClass: 'badge-economy', badgeText: 'Economy' },
@@ -23,16 +41,15 @@ export default async function handler(req, res) {
       politics: { cat: 'polity', badgeClass: 'badge-polity', badgeText: 'Rajneeti' }
     };
 
-    const news = data.items.map((item, i) => {
-      const text = (item.title + ' ' + (item.description || '')).toLowerCase();
+    const news = items.map((item, i) => {
+      const text = (item.title + ' ' + item.desc).toLowerCase();
       let catInfo = CAT_MAP.politics;
-      if (text.match(/economy|rbi|gdp|inflation|budget|rupee|market|bank/)) catInfo = CAT_MAP.economy;
-      else if (text.match(/environment|climate|pollution|forest|carbon|green/)) catInfo = CAT_MAP.environment;
-      else if (text.match(/science|space|isro|nasa|tech|ai|research/)) catInfo = CAT_MAP.science;
-      else if (text.match(/china|pakistan|us |russia|foreign|international|global/)) catInfo = CAT_MAP.world;
+      if (text.match(/economy|rbi|gdp|inflation|budget|rupee|market|bank|finance|trade/)) catInfo = CAT_MAP.economy;
+      else if (text.match(/environment|climate|pollution|forest|carbon|green|wildlife/)) catInfo = CAT_MAP.environment;
+      else if (text.match(/science|space|isro|nasa|tech|ai|research|satellite|moon/)) catInfo = CAT_MAP.science;
+      else if (text.match(/china|pakistan|us |russia|foreign|international|global|treaty/)) catInfo = CAT_MAP.world;
 
       const words = item.title.split(' ').filter(w => w.length > 4).slice(0, 4);
-      const cleanDesc = (item.description || '').replace(/<[^>]*>/g, '').slice(0, 200);
 
       return {
         id: i + 1,
@@ -41,8 +58,8 @@ export default async function handler(req, res) {
         badgeText: catInfo.badgeText,
         title: item.title,
         date: item.pubDate ? timeAgo(item.pubDate) : 'Aaj',
-        source: 'NDTV',
-        summary: cleanDesc + '…',
+        source: item.source || 'Google News',
+        summary: item.desc ? item.desc.slice(0, 200) + '…' : 'Click to read more.',
         tags: words.length ? words : [catInfo.badgeText, 'India', 'UPSC'],
         difficulty: Math.floor(Math.random() * 3) + 1,
         trending: i < 2
