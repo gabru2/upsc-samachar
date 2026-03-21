@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPSC Samachar — Smart News for Smart Aspirants</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink2: #2d2d44;
+    --muted: #6b6b85;
+    --bg: #f5f3ef;
+    --card: #ffffff;
+    --accent: #c0392b;
+    --accent2: #e67e22;
+    --gold: #d4a017;
+    --green: #1a6b3c;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 20px rgba(0,0,0,0.07);
+    --shadow-hover: 0 8px 40px rgba(0,0,0,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 900;
+    font-family: 'Playfair Display', serif;
+    color: white;
+  }
+
+  .logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-streak {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .streak-fire { font-size: 16px; }
+
+  /* CATEGORY TABS */
+  .categories {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0 24px;
+    background: var(--ink);
+    scrollbar-width: none;
+  }
+  .categories::-webkit-scrollbar { display: none; }
+
+  .cat-btn {
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  .cat-btn:hover { color: rgba(255,255,255,0.8); }
+  .cat-btn.active {
+    color: white;
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 28px;
+  }
+
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; padding: 16px; }
+    .sidebar { display: none; }
+  }
+
+  /* SECTION HEADERS */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* NEWS CARD */
+  .news-card {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  .news-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(192,57,43,0.2);
+  }
+
+  .card-badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 0;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .badge-polity { background: #fef3cd; color: #7d5a00; }
+  .badge-economy { background: #d4edda; color: #155724; }
+  .badge-enviro { background: #d1ecf1; color: #0c5460; }
+  .badge-ir { background: #f8d7da; color: #721c24; }
+  .badge-science { background: #e2d9f3; color: #432874; }
+  .badge-history { background: #fde2e4; color: #8b1a2b; }
+  .badge-geography { background: #d6eadf; color: #1b5e33; }
+  .badge-hot { background: var(--accent); color: white; }
+
+  .difficulty {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .diff-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .diff-dot.filled { background: var(--accent2); }
+
+  .card-body { padding: 12px 20px 18px; }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .card-summary {
+    font-size: 14px;
+    color: #444;
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--bg);
+  }
+
+  .card-cta {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-learn {
+    flex: 1;
+    padding: 10px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  .btn-learn:hover { background: var(--accent); }
+
+  .btn-quiz {
+    padding: 10px 16px;
+    background: none;
+    color: var(--ink2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  .btn-quiz:hover {
+    background: var(--bg);
+    border-color: var(--ink);
+  }
+
+  /* SIDEBAR */
+  .sidebar {}
+
+  .mini-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .mini-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .today-topic {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .topic-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 13px;
+    color: var(--ink2);
+  }
+
+  .topic-item:hover { background: var(--bg); }
+
+  .topic-num {
+    width: 22px; height: 22px;
+    background: var(--ink);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 4px;
+    height: 6px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  /* MODAL / DETAIL VIEW */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,20,0.6);
+    z-index: 200;
+    backdrop-filter: blur(4px);
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+
+  .modal {
+    background: var(--card);
+    border-radius: 20px;
+    max-width: 760px;
+    width: 100%;
+    margin: auto;
+    overflow: hidden;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .modal-head {
+    background: var(--ink);
+    color: white;
+    padding: 24px 28px 20px;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute; top: 18px; right: 20px;
+    background: rgba(255,255,255,0.1);
+    border: none; color: white;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-close:hover { background: rgba(255,255,255,0.2); }
+
+  .modal-category { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+
+  .modal-body { padding: 28px; }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+    color: var(--muted);
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* AI Content Sections */
+  .ai-section {
+    margin-bottom: 28px;
+  }
+
+  .ai-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ai-section-icon {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+
+  .icon-story { background: #fef3cd; }
+  .icon-points { background: #d4edda; }
+  .icon-connect { background: #e2d9f3; }
+  .icon-mcq { background: #f8d7da; }
+  .icon-mnemonic { background: #d1ecf1; }
+
+  .story-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #333;
+    background: #fffbf5;
+    border-left: 4px solid var(--gold);
+    padding: 16px 18px;
+    border-radius: 0 10px 10px 0;
+  }
+
+  .key-points {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .key-point {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .key-point-num {
+    background: var(--ink);
+    color: white;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  .connections { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .connection-chip {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    display: flex; align-items: center; gap: 6px;
+    background: white;
+  }
+
+  .connection-chip span { font-weight: 600; }
+
+  /* MCQ */
+  .mcq-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .mcq-question {
+    background: var(--ink);
+    color: white;
+    padding: 16px 20px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .mcq-options { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .mcq-option {
+    padding: 11px 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: white;
+  }
+
+  .mcq-option:hover { border-color: var(--ink); background: var(--bg); }
+
+  .mcq-option.correct { border-color: var(--green); background: #d4edda; color: #155724; }
+  .mcq-option.wrong { border-color: var(--accent); background: #f8d7da; color: #721c24; }
+
+  .opt-label {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .explanation-box {
+    margin: 10px 12px 12px;
+    background: #fffbf5;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #5a4200;
+    line-height: 1.6;
+    display: none;
+  }
+
+  /* MNEMONIC */
+  .mnemonic-box {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .mnemonic-word {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+
+  .mnemonic-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .mnemonic-item {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .mnemonic-letter { color: var(--gold); font-weight: 700; }
+
+  .mnemonic-hint {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+  }
+
+  /* Scrollable AI content */
+  #modal-content-area { min-height: 200px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    z-index: 300;
+    transition: transform 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">U</div>
+      <div>
+        <div class="logo-text">UPSC Samachar</div>
+        <div class="logo-sub">Smart News · Smart Prep</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button onclick="loadNews()" id="refresh-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit">🔄 Refresh</button>
+      <div class="header-streak">
+        <span class="streak-fire">🔥</span>
+        <span id="streak-count">7</span> din ki streak
+      </div>
+    </div>
+  </div>
+  <div class="categories" id="cat-tabs">
+    <button class="cat-btn active" data-cat="all">Sab Kuch</button>
+    <button class="cat-btn" data-cat="polity">Rajneeti</button>
+    <button class="cat-btn" data-cat="economy">Arthvyavastha</button>
+    <button class="cat-btn" data-cat="enviro">Paryavaran</button>
+    <button class="cat-btn" data-cat="ir">Videsh Niti</button>
+    <button class="cat-btn" data-cat="science">Vigyan</button>
+    <button class="cat-btn" data-cat="geography">Bhugol</button>
+  </div>
+</header>
+
+<main>
+  <div class="feed" id="news-feed">
+    <div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
+    <!-- Cards injected here -->
+  </div>
+
+  <div class="sidebar">
+    <div class="section-label">Aaj Ka Target</div>
+    <div class="mini-card">
+      <h3>📚 Aaj Ki Progress</h3>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px">
+        <span>Khabrein padhi</span>
+        <span id="read-count">0 / 5</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Aaj 5 khabrein padhkar streak banao!</div>
+    </div>
+
+    <div class="mini-card">
+      <h3>⚡ Quick Revision</h3>
+      <div class="today-topic" id="quick-topics">
+        <div class="topic-item"><div class="topic-num">1</div>CAA 2019 ka provision</div>
+        <div class="topic-item"><div class="topic-num">2</div>Article 370 kya tha?</div>
+        <div class="topic-item"><div class="topic-num">3</div>PMLA Amendment</div>
+        <div class="topic-item"><div class="topic-num">4</div>Green Hydrogen Mission</div>
+        <div class="topic-item"><div class="topic-num">5</div>FATF Grey List</div>
+      </div>
+    </div>
+
+    <div class="mini-card">
+      <h3>📊 Weak Areas</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>Geography</span><span style="color:var(--accent)">Weak</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:28%;background:var(--accent)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>Economy</span><span style="color:var(--accent2)">Average</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:55%;background:var(--accent2)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>Polity</span><span style="color:var(--green)">Strong</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:78%;background:var(--green)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div class="modal-category" id="modal-cat-label"></div>
+      <div class="modal-title" id="modal-title-text"></div>
+      <div style="font-size:13px;opacity:0.5;margin-top:8px" id="modal-source-text"></div>
+    </div>
+    <div class="modal-body" id="modal-content-area">
+      <div class="loading-state" id="loading-state">
+        <div class="spinner"></div>
+        <div>AI taiyaar kar raha hai aapke liye...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── NEWS DATA — dynamic + fallback static ───────────────────────────────────
+let NEWS = [];
+
+const FALLBACK_NEWS = [
+  {
+    id: 1, cat: "polity", badgeClass: "badge-polity", badgeText: "Rajneeti",
+    title: "Supreme Court ne Waqf Amendment Bill par sunvai shuru ki",
+    date: "Aaj", source: "Hindustan Times",
+    summary: "Supreme Court ne Central Waqf Council aur kai state sarkaaron ki petition par 5-judge constitutional bench gath…",
+    tags: ["Waqf Act","Minority Rights","Constitutional Law","Article 26"], difficulty: 3, trending: true
+  },
+  {
+    id: 2, cat: "economy", badgeClass: "badge-economy", badgeText: "Economy",
+    title: "RBI ne repo rate 25 bps ghatakar 6% kar di — 5 saal mein pehli baar",
+    date: "Aaj", source: "Economic Times",
+    summary: "Monetary Policy Committee ne 6-0 se vote karke repo rate mein katauti ki — inflation target 4% ke kareeb aane ke baad…",
+    tags: ["RBI","Monetary Policy","Inflation","CRR","GDP"], difficulty: 2, trending: false
+  },
+  {
+    id: 3, cat: "enviro", badgeClass: "badge-enviro", badgeText: "Paryavaran",
+    title: "India ka Green Credit Programme: Carbon market ka naya chapter",
+    date: "Kal", source: "Down To Earth",
+    summary: "Ministry of Environment ne Green Credit Rules 2023 ke tahat carbon credits trading platform launch kiya…",
+    tags: ["Climate Change","Carbon Credits","COP28","Green Economy"], difficulty: 2, trending: false
+  },
+  {
+    id: 4, cat: "ir", badgeClass: "badge-ir", badgeText: "Videsh Niti",
+    title: "India-Middle East-Europe Economic Corridor: Kya hai iska UPSC angle?",
+    date: "Kal", source: "The Hindu",
+    summary: "G20 summit mein announce hua IMEC corridor China ke BRI ko counter karne ki India ki badi chaal maana ja raha hai…",
+    tags: ["IMEC","G20","BRI","Connectivity","Geopolitics"], difficulty: 3, trending: true
+  },
+  {
+    id: 5, cat: "science", badgeClass: "badge-science", badgeText: "Vigyan & Tech",
+    title: "ISRO ka NISAR satellite launch — Earth observation mein naya milestone",
+    date: "2 din pehle", source: "The Hindu",
+    summary: "NASA-ISRO SAR (NISAR) satellite 12-din cycle mein poori Earth ka surface scan karega…",
+    tags: ["ISRO","SAR Technology","NASA","Earth Observation","Space"], difficulty: 1, trending: false
+  }
+];
+
+// Category mapping from NewsData to our app
+const CAT_MAP = {
+  "politics": { cat: "polity", badgeClass: "badge-polity", badgeText: "Rajneeti" },
+  "business": { cat: "economy", badgeClass: "badge-economy", badgeText: "Economy" },
+  "economy":  { cat: "economy", badgeClass: "badge-economy", badgeText: "Economy" },
+  "environment": { cat: "enviro", badgeClass: "badge-enviro", badgeText: "Paryavaran" },
+  "science":  { cat: "science", badgeClass: "badge-science", badgeText: "Vigyan & Tech" },
+  "technology": { cat: "science", badgeClass: "badge-science", badgeText: "Vigyan & Tech" },
+  "world":    { cat: "ir", badgeClass: "badge-ir", badgeText: "Videsh Niti" },
+  "top":      { cat: "polity", badgeClass: "badge-polity", badgeText: "Rajneeti" }
+};
+
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+  if (diff < 60) return `${diff} min pehle`;
+  if (diff < 1440) return `${Math.floor(diff/60)} ghante pehle`;
+  return `${Math.floor(diff/1440)} din pehle`;
+}
+
+async function loadNews() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) btn.textContent = '⏳ Loading...';
+  const feed = document.getElementById('news-feed');
+  feed.innerHTML = `<div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
+    <div style="text-align:center;padding:40px;color:var(--muted)">
+      <div class="spinner" style="margin:0 auto 12px"></div>
+      <div>Taza khabrein la raha hoon...</div>
+    </div>`;
+
+  const d = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  setTimeout(() => {
+    const el = document.getElementById('today-date');
+    if (el) el.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  }, 100);
+
+  try {
+    const resp = await fetch('/api/news');
+    const data = await resp.json();
+
+    if (data.success && data.news?.length) {
+      NEWS = data.news;
+    } else {
+      NEWS = FALLBACK_NEWS;
+    }
+  } catch(e) {
+    NEWS = FALLBACK_NEWS;
+  }
+
+  renderCards('all');
+  const btn2 = document.getElementById('refresh-btn');
+  if (btn2) btn2.textContent = '🔄 Refresh';
+}
+
+
+// ─── SIMPLE CACHE — same news par dobara AI call nahi hoga ──────────────────
+const aiCache = {};
+
+// ─── AI FETCH ───────────────────────────────────────────────────────────────
+async function fetchAIContent(item, mode) {
+  const area = document.getElementById('modal-content-area');
+  const cacheKey = `${item.id}_${mode}`;
+
+  // Cache check — agar pehle fetch ho chuka hai toh seedha render karo
+  if (aiCache[cacheKey]) {
+    if (mode === 'learn') renderLearnContent(aiCache[cacheKey], item);
+    else renderQuizContent(aiCache[cacheKey]);
+    return;
+  }
+
+  const promptLearn = `Tum India ke best UPSC teacher ho — jaise Vajiram ya Vision IAS ke teachers padhate hain. Tumhara kaam hai is khabar ko itna achhe se samjhana ki student exam mein confidently likh sake.
+
+Khabar: "${item.title}"
+Category: ${item.badgeText}
+Related tags: ${item.tags.join(', ')}
+
+SIRF JSON return karo, koi extra text nahi, koi backticks nahi:
+{
+  "story": "Yeh section SABSE important hai. Ek engaging, detailed story likho — kam se kam 6-8 lines. Ek real life analogy ya relatable situation use karo. Jaise — agar RBI rate cut ki khabar hai toh ek common aadmi ki kahani batao ki uski EMI kaise kam hogi. Background bhi do — yeh issue kyun aaya, kya hua pehle, ab kya ho raha hai. Student ko feel hona chahiye jaise woh khud us situation mein hai. Dry facts bilkul nahi — interesting aur knowledgeable dono.",
+  "keyPoints": [
+    "Point 1 — detail mein, 25-30 words, exam mein directly likhne layak",
+    "Point 2 — specific numbers, dates, names include karo",
+    "Point 3 — constitutional/legal angle agar ho",
+    "Point 4 — economic/social impact",
+    "Point 5 — India ka global context mein place"
+  ],
+  "connections": [
+    {"icon": "📜", "label": "Polity", "text": "Specific article/provision jo directly connect hota hai"},
+    {"icon": "📊", "label": "Economy", "text": "Economic impact — GDP, inflation, employment etc."},
+    {"icon": "🌍", "label": "International", "text": "Global connection — kaunsa desh, treaty, organization"}
+  ],
+  "mnemonic": {
+    "word": "EK CATCHY WORD YA ACRONYM CAPS MEIN",
+    "breakdown": [
+      {"letter": "pehla letter", "full": "kya represent karta hai"},
+      {"letter": "doosra letter", "full": "kya represent karta hai"}
+    ],
+    "hint": "Ek line mein — yeh trick kaise kaam karti hai yaad rakhne mein"
+  },
+  "mcq": {
+    "question": "Ek tricky UPSC Prelims style MCQ — jo direct nahi balki conceptual ho",
+    "options": ["(a) Option 1", "(b) Option 2", "(c) Option 3", "(d) Option 4"],
+    "correct": 2,
+    "explanation": "Detailed explanation — sahi answer kyun sahi hai, baaki kyun galat hain — 4-5 lines mein"
+  }
+}`;
+
+  const promptQuiz = `Tum ek UPSC expert teacher ho. Hindi mein 3 MCQ questions banao is khabar par.
+
+Khabar: "${item.title}"
+Category: ${item.badgeText}
+
+Sirf JSON return karo (koi extra text ya backticks nahi):
+{
+  "questions": [
+    {
+      "question": "UPSC style question 1",
+      "options": ["(a) Option", "(b) Option", "(c) Option", "(d) Option"],
+      "correct": 0,
+      "explanation": "Explanation"
+    },
+    {
+      "question": "Question 2",
+      "options": ["(a)", "(b)", "(c)", "(d)"],
+      "correct": 1,
+      "explanation": "Explanation"
+    },
+    {
+      "question": "Question 3",
+      "options": ["(a)", "(b)", "(c)", "(d)"],
+      "correct": 3,
+      "explanation": "Explanation"
+    }
+  ]
+}`;
+
+  // Step 1: Key check
+  if (!GROQ_KEY || GROQ_KEY.length < 10) {
+    area.innerHTML = `<div class="loading-state" style="padding:30px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🔑</div>
+      <div style="font-weight:600;font-size:15px;margin-bottom:10px;color:#c0392b">API Key nahi daali!</div>
+      <div style="font-size:13px;color:#555;line-height:1.9;text-align:left;background:#f9f9f9;padding:14px;border-radius:8px">
+        Script URL sahi nahi hai. Developer se contact karo.
+      </div>
+    </div>`;
+    return;
+  }
+
+  try {
+    // No-cors workaround — Apps Script ke liye mode no-cors nahi chalega
+    // Isliye direct fetch with timeout
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+
+    const resp = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_KEY}`
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: mode === 'learn' ? promptLearn : promptQuiz }],
+        max_tokens: 1200,
+        temperature: 0.7
+      })
+    });
+    clearTimeout(timer);
+
+    const text2 = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(text2);
+    } catch(pe) {
+      throw new Error('Response parse nahi hua: ' + text2.slice(0, 100));
+    }
+
+    if (data.error) {
+      throw new Error('Groq Error: ' + (data.error.message || JSON.stringify(data.error)));
+    }
+
+    const text = data.choices?.[0]?.message?.content || '';
+    if (!text) throw new Error('Khaali response: ' + JSON.stringify(data).slice(0,200));
+
+    let clean = text.trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON nahi mila: ' + clean.slice(0,100));
+    clean = jsonMatch[0];
+    const parsed = JSON.parse(clean);
+
+    aiCache[cacheKey] = parsed;
+
+    if (mode === 'learn') renderLearnContent(parsed, item);
+    else renderQuizContent(parsed);
+
+  } catch(e) {
+    const isTimeout = e.name === 'AbortError';
+    area.innerHTML = `<div class="loading-state" style="padding:24px;text-align:center">
+      <div style="font-size:32px;margin-bottom:10px">${isTimeout ? '⏱️' : '⚠️'}</div>
+      <div style="font-weight:600;color:#c0392b;margin-bottom:6px">${isTimeout ? 'Time out ho gaya!' : 'Kuch problem aayi'}</div>
+      <div style="font-size:13px;color:#666;background:#f9f9f9;padding:10px;border-radius:6px;margin-bottom:12px;font-family:monospace;word-break:break-all">${e.message}</div>
+      <button onclick="fetchAIContent(currentItem, currentMode)" style="padding:9px 22px;background:#1a1a2e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔄 Dobara Try Karo</button>
+    </div>`;
+  }
+}
+
+// ─── RENDER LEARN ────────────────────────────────────────────────────────────
+function renderLearnContent(d, item) {
+  const area = document.getElementById('modal-content-area');
+
+  let connectionsHTML = (d.connections || []).map(c =>
+    `<div class="connection-chip">${c.icon} <span>${c.label}:</span> ${c.text}</div>`
+  ).join('');
+
+  let breakdownHTML = (d.mnemonic?.breakdown || []).map(b =>
+    `<div class="mnemonic-item"><span class="mnemonic-letter">${b.letter}</span> — ${b.full}</div>`
+  ).join('');
+
+  let keyHTML = (d.keyPoints || []).map((p,i) =>
+    `<div class="key-point"><div class="key-point-num">${i+1}</div><div>${p}</div></div>`
+  ).join('');
+
+  const opts = (d.mcq?.options || []);
+  const correctIdx = d.mcq?.correct ?? 0;
+  let optHTML = opts.map((o,i) =>
+    `<div class="mcq-option" data-idx="${i}" onclick="checkAnswer(this,${i},${correctIdx},'${encodeURIComponent(d.mcq?.explanation||'')}')">`+
+    `<div class="opt-label">${String.fromCharCode(65+i)}</div><div>${o.replace(/^\([a-d]\)\s*/,'')}</div></div>`
+  ).join('');
+
+  area.innerHTML = `
+    <div class="ai-section">
+      <div class="ai-section-title"><div class="ai-section-icon icon-story">📖</div>Samjho Story ki Tarah</div>
+      <div class="story-text">${d.story || ''}</div>
+    </div>
+
+    <div class="ai-section">
+      <div class="ai-section-title"><div class="ai-section-icon icon-points">✅</div>5 Key Points jo Exam mein aate hain</div>
+      <div class="key-points">${keyHTML}</div>
+    </div>
+
+    ${d.connections?.length ? `
+    <div class="ai-section">
+      <div class="ai-section-title"><div class="ai-section-icon icon-connect">🔗</div>Dusre Topics se Connection</div>
+      <div class="connections">${connectionsHTML}</div>
+    </div>` : ''}
+
+    ${d.mnemonic?.word ? `
+    <div class="ai-section">
+      <div class="ai-section-title"><div class="ai-section-icon icon-mnemonic">🧠</div>Yaad Karne ka Trick</div>
+      <div class="mnemonic-box">
+        <div class="mnemonic-word">${d.mnemonic.word}</div>
+        <div class="mnemonic-breakdown">${breakdownHTML}</div>
+        <div class="mnemonic-hint">${d.mnemonic.hint || ''}</div>
+      </div>
+    </div>` : ''}
+
+    ${d.mcq ? `
+    <div class="ai-section">
+      <div class="ai-section-title"><div class="ai-section-icon icon-mcq">✏️</div>Ek Quick MCQ Try Karo</div>
+      <div class="mcq-box">
+        <div class="mcq-question">${d.mcq.question}</div>
+        <div class="mcq-options" id="mcq-opts">${optHTML}</div>
+        <div class="explanation-box" id="mcq-exp"></div>
+      </div>
+    </div>` : ''}
+  `;
+  answeredMCQ = false;
+}
+
+// ─── RENDER QUIZ ─────────────────────────────────────────────────────────────
+function renderQuizContent(d) {
+  const area = document.getElementById('modal-content-area');
+  const qs = d.questions || [];
+
+  let html = `<div style="margin-bottom:20px;font-size:15px;font-weight:600">3 UPSC-style Questions — Sahi jawab dhundho!</div>`;
+
+  qs.forEach((q, qi) => {
+    const opts = (q.options || []).map((o,i) =>
+      `<div class="mcq-option" data-qi="${qi}" data-idx="${i}" onclick="checkAnswerQuiz(this,${qi},${i},${q.correct},'${encodeURIComponent(q.explanation||'')}')">
+        <div class="opt-label">${String.fromCharCode(65+i)}</div>
+        <div>${o.replace(/^\([a-d]\)\s*/,'')}</div>
+      </div>`
+    ).join('');
+
+    html += `
+      <div class="ai-section">
+        <div class="mcq-box">
+          <div class="mcq-question">Q${qi+1}. ${q.question}</div>
+          <div class="mcq-options" id="qopts-${qi}">${opts}</div>
+          <div class="explanation-box" id="qexp-${qi}"></div>
+        </div>
+      </div>`;
+  });
+
+  area.innerHTML = html;
+}
+
+// ─── MCQ HANDLERS ────────────────────────────────────────────────────────────
+function checkAnswer(el, chosen, correct, expEnc) {
+  if (answeredMCQ) return;
+  answeredMCQ = true;
+  const opts = document.querySelectorAll('#mcq-opts .mcq-option');
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (i === correct) o.classList.add('correct');
+    else if (i === chosen) o.classList.add('wrong');
+  });
+  const exp = document.getElementById('mcq-exp');
+  exp.textContent = '💡 ' + decodeURIComponent(expEnc);
+  exp.style.display = 'block';
+  showToast(chosen === correct ? '✅ Sahi Jawab! Badiya!' : '❌ Galat! Explanation padho.');
+}
+
+const answeredQuiz = {};
+function checkAnswerQuiz(el, qi, chosen, correct, expEnc) {
+  if (answeredQuiz[qi]) return;
+  answeredQuiz[qi] = true;
+  const opts = document.querySelectorAll(`#qopts-${qi} .mcq-option`);
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (i === correct) o.classList.add('correct');
+    else if (i === chosen) o.classList.add('wrong');
+  });
+  const exp = document.getElementById(`qexp-${qi}`);
+  exp.textContent = '💡 ' + decodeURIComponent(expEnc);
+  exp.style.display = 'block';
+}
+
+// ─── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+loadNews();
+</script>
+</body>
+</html>
