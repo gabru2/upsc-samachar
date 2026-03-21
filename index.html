@@ -812,6 +812,118 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/1440)} din pehle`;
 }
 
+// ─── RENDER CARDS ────────────────────────────────────────────────────────────
+let readCount = 0;
+const GOAL = 5;
+
+function renderDots(n, max=3) {
+  let html = '';
+  for (let i=1;i<=max;i++) {
+    html += `<div class="diff-dot ${i<=n?'filled':''}"></div>`;
+  }
+  return html;
+}
+
+function renderCards(filter='all') {
+  const feed = document.getElementById('news-feed');
+  const header = feed.querySelector('.section-label');
+  feed.innerHTML = '';
+  feed.appendChild(header);
+
+  const filtered = filter === 'all' ? NEWS : NEWS.filter(n => n.cat === filter);
+
+  if (!filtered.length) {
+    feed.innerHTML += `<div style="text-align:center;padding:40px;color:var(--muted)">Is category mein koi khabar nahi.</div>`;
+    return;
+  }
+
+  filtered.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'news-card';
+    card.innerHTML = `
+      <div class="card-badge-row">
+        <span class="badge ${item.badgeClass}">${item.badgeText}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${item.trending ? '<span class="badge badge-hot">🔥 Trending</span>' : ''}
+          <div class="difficulty" title="Difficulty">${renderDots(item.difficulty)}</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">
+          <span>${item.date}</span>
+          <span>•</span>
+          <span>${item.source}</span>
+        </div>
+        <div class="card-summary">${item.summary}</div>
+        <div class="card-tags">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="card-cta">
+          <button class="btn-learn" onclick="openLearn(${item.id})">📖 Explain karo UPSC ke liye</button>
+          <button class="btn-quiz" onclick="openQuiz(${item.id})">✏️ Quiz</button>
+        </div>
+      </div>
+    `;
+    feed.appendChild(card);
+  });
+}
+
+// ─── CATEGORY FILTER ────────────────────────────────────────────────────────
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards(btn.dataset.cat);
+  });
+});
+
+// ─── MODAL ──────────────────────────────────────────────────────────────────
+let currentMode = 'learn';
+let currentItem = null;
+let answeredMCQ = false;
+
+document.getElementById('modal-close').onclick = closeModal;
+document.getElementById('modal-overlay').onclick = e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+};
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function openLearn(id) {
+  currentMode = 'learn';
+  openModal(id);
+}
+
+function openQuiz(id) {
+  currentMode = 'quiz';
+  openModal(id);
+}
+
+function openModal(id) {
+  currentItem = NEWS.find(n => n.id === id);
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('open');
+  document.getElementById('modal-cat-label').textContent = currentItem.badgeText + ' · ' + currentItem.tags.join(' · ');
+  document.getElementById('modal-title-text').textContent = currentItem.title;
+  document.getElementById('modal-source-text').textContent = currentItem.source + ' — ' + currentItem.date;
+  const area = document.getElementById('modal-content-area');
+  area.innerHTML = `<div class="loading-state"><div class="spinner"></div><div>AI taiyaar kar raha hai...</div></div>`;
+  updateReadCount();
+  fetchAIContent(currentItem, currentMode);
+}
+
+// ─── PROGRESS ───────────────────────────────────────────────────────────────
+const readIds = new Set();
+function updateReadCount() {
+  if (!currentItem) return;
+  readIds.add(currentItem.id);
+  const n = readIds.size;
+  const capped = Math.min(n, GOAL);
+  document.getElementById('read-count').textContent = `${capped} / ${GOAL}`;
+  document.getElementById('progress-fill').style.width = `${(capped/GOAL)*100}%`;
+}
+
 async function loadNews() {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.textContent = '⏳ Loading...';
@@ -819,22 +931,82 @@ async function loadNews() {
   feed.innerHTML = `<div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
     <div style="text-align:center;padding:40px;color:var(--muted)">
       <div class="spinner" style="margin:0 auto 12px"></div>
-      <div>Taza khabrein la raha hoon...</div>
+      <div>Aaj ke important UPSC topics la raha hoon...</div>
     </div>`;
 
   const d = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   setTimeout(() => {
     const el = document.getElementById('today-date');
-    if (el) el.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    if (el) el.textContent = today;
   }, 100);
 
   try {
-    const resp = await fetch('/api/news');
-    const data = await resp.json();
+    const newsPrompt = `Aaj ${today} ke liye 6 important UPSC-relevant news topics banao. Yeh realistic aur current events jaisi honi chahiye — India ki politics, economy, environment, science, foreign policy se.
 
-    if (data.success && data.news?.length) {
-      NEWS = data.news;
+SIRF JSON return karo, koi extra text nahi:
+{
+  "news": [
+    {
+      "cat": "polity",
+      "badgeText": "Rajneeti", 
+      "title": "Khabar ka headline (realistic, current events jaisa)",
+      "summary": "2-3 line summary",
+      "tags": ["tag1", "tag2", "tag3", "tag4"],
+      "difficulty": 2,
+      "trending": true
+    }
+  ]
+}
+
+Categories use karo: polity, economy, enviro, ir, science, geography
+badgeText: Rajneeti, Economy, Paryavaran, Videsh Niti, Vigyan & Tech, Bhugol
+difficulty: 1, 2 ya 3
+6 news banao — har category se ek.`;
+
+    const resp = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: newsPrompt }],
+        max_tokens: 1500,
+        temperature: 0.8
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.news?.length) {
+        const badgeMap = {
+          polity: "badge-polity", economy: "badge-economy",
+          enviro: "badge-enviro", ir: "badge-ir",
+          science: "badge-science", geography: "badge-geography"
+        };
+        NEWS = parsed.news.map((item, i) => ({
+          id: i + 1,
+          cat: item.cat,
+          badgeClass: badgeMap[item.cat] || "badge-polity",
+          badgeText: item.badgeText,
+          title: item.title,
+          date: "Aaj",
+          source: "AI Curated",
+          summary: item.summary,
+          tags: item.tags || [],
+          difficulty: item.difficulty || 2,
+          trending: item.trending || false
+        }));
+      } else {
+        NEWS = FALLBACK_NEWS;
+      }
     } else {
       NEWS = FALLBACK_NEWS;
     }
