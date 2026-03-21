@@ -928,89 +928,29 @@ async function loadNews() {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.textContent = '⏳ Loading...';
   const feed = document.getElementById('news-feed');
-  feed.innerHTML = `<div class="section-label">Aaj Ki Khabrein — <span id="today-date"></span></div>
-    <div style="text-align:center;padding:40px;color:var(--muted)">
-      <div class="spinner" style="margin:0 auto 12px"></div>
-      <div>Aaj ke important UPSC topics la raha hoon...</div>
-    </div>`;
 
   const d = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const today = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-  setTimeout(() => {
-    const el = document.getElementById('today-date');
-    if (el) el.textContent = today;
-  }, 100);
+
+  feed.innerHTML = `<div class="section-label">Aaj Ki Khabrein — ${today}</div>
+    <div style="text-align:center;padding:40px;color:var(--muted)">
+      <div class="spinner" style="margin:0 auto 12px"></div>
+      <div>Taza khabrein la raha hoon...</div>
+    </div>`;
 
   try {
-    const newsPrompt = `Aaj ${today} ke liye 6 important UPSC-relevant news topics banao. Yeh realistic aur current events jaisi honi chahiye — India ki politics, economy, environment, science, foreign policy se.
-
-SIRF JSON return karo, koi extra text nahi:
-{
-  "news": [
-    {
-      "cat": "polity",
-      "badgeText": "Rajneeti", 
-      "title": "Khabar ka headline (realistic, current events jaisa)",
-      "summary": "2-3 line summary",
-      "tags": ["tag1", "tag2", "tag3", "tag4"],
-      "difficulty": 2,
-      "trending": true
-    }
-  ]
-}
-
-Categories use karo: polity, economy, enviro, ir, science, geography
-badgeText: Rajneeti, Economy, Paryavaran, Videsh Niti, Vigyan & Tech, Bhugol
-difficulty: 1, 2 ya 3
-6 news banao — har category se ek.`;
-
-    const resp = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_KEY}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: newsPrompt }],
-        max_tokens: 1500,
-        temperature: 0.8
-      })
-    });
-
+    const resp = await fetch('/api/news');
     const data = await resp.json();
-    const text = data.choices?.[0]?.message?.content || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.news?.length) {
-        const badgeMap = {
-          polity: "badge-polity", economy: "badge-economy",
-          enviro: "badge-enviro", ir: "badge-ir",
-          science: "badge-science", geography: "badge-geography"
-        };
-        NEWS = parsed.news.map((item, i) => ({
-          id: i + 1,
-          cat: item.cat,
-          badgeClass: badgeMap[item.cat] || "badge-polity",
-          badgeText: item.badgeText,
-          title: item.title,
-          date: "Aaj",
-          source: "AI Curated",
-          summary: item.summary,
-          tags: item.tags || [],
-          difficulty: item.difficulty || 2,
-          trending: item.trending || false
-        }));
-      } else {
-        NEWS = FALLBACK_NEWS;
-      }
+    if (data.success && data.news?.length) {
+      NEWS = data.news;
+      console.log('News loaded from API:', NEWS.length);
     } else {
+      console.log('API failed, using fallback:', data.error);
       NEWS = FALLBACK_NEWS;
     }
   } catch(e) {
+    console.log('Fetch error:', e.message);
     NEWS = FALLBACK_NEWS;
   }
 
@@ -1019,6 +959,10 @@ difficulty: 1, 2 ya 3
   if (btn2) btn2.textContent = '🔄 Refresh';
 }
 
+
+// ─── GROQ CONFIG ────────────────────────────────────────────────────────────
+const GROQ_KEY = "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";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // ─── SIMPLE CACHE — same news par dobara AI call nahi hoga ──────────────────
 const aiCache = {};
